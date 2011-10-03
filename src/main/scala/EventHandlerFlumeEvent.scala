@@ -32,6 +32,7 @@ case class EventHandlerFlumeEvent(event: EventHandler.Event) extends FlumeEvent 
   }
   
   override val getBody = message.toString.getBytes
+  override val getTimestamp = System.currentTimeMillis
 
   private def printStackTrace(cause: Throwable): String = {
     val sw = new StringWriter

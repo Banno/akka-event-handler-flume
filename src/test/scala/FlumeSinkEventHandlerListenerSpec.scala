@@ -18,9 +18,10 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       nextEvent() must eventually (beSome)
       
       val event = nextEvent().get
-      new String(event.get("sender")) must_== "com.banno.akka.event.flume.FlumeSinkEventHandlerListenerSpec$$anonfun$1$$anonfun$apply$1$$anon$1"
+      new String(event.get("sender")) must contain("FlumeSinkEventHandlerListenerSpec$")
       event.getPriority must_== Event.Priority.INFO
       new String(event.get("threadName")) must not (beEmpty)
+      event.getTimestamp must beGreaterThan(0L)
       new String(event.getBody) must_== "hello"
     }
 
