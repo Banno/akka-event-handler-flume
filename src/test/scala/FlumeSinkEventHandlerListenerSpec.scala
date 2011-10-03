@@ -20,6 +20,7 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       val event = nextEvent().get
       new String(event.get("sender")) must_== "com.banno.akka.event.flume.FlumeSinkEventHandlerListenerSpec$$anonfun$1$$anonfun$apply$1$$anon$1"
       event.getPriority must_== Event.Priority.INFO
+      new String(event.get("threadName")) must not beEmpty
     }
 
     "add stacktraces for error events" in new sinkSource {
@@ -33,7 +34,7 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       event.getPriority must_== Event.Priority.ERROR
       new String(event.get("exceptionType")) must_== "java.lang.RuntimeException"
       new String(event.get("exceptionMessage")) must_== "ouch"
-      new String(event.get("exceptionBacktrace")) must contain("at com.banno.akka.event.flume.FlumeSinkEventHandlerListenerSpec$$anonfun$1$$anonfun$apply$4$$anon$2$delayedInit$body.apply(FlumeSinkEventHandlerListenerSpec.scala:27)")
+      new String(event.get("exceptionBacktrace")) must contain("at com.banno.akka.event.flume.FlumeSinkEventHandlerListenerSpec$$anonfun$1$$anonfun$apply$4$$anon$2$delayedInit$body.apply(FlumeSinkEventHandlerListenerSpec.scala:28)")
     }
   }
 

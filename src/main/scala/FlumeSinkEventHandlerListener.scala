@@ -10,6 +10,7 @@ case class EventHandlerFlumeEvent(event: EventHandler.Event) extends EventImpl {
   import EventHandler._
   import FlumeSinkEventHandlerListener._
   
+  set("threadName", event.thread.getName)
   event match {
     case Error(cause, instance, message) =>
       setPriority(Event.Priority.ERROR)
