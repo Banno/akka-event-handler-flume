@@ -2,9 +2,8 @@ package com.banno.akka.event.flume
 import akka.event.EventHandler
 import java.io.{StringWriter, PrintWriter}
 import com.cloudera.flume.core.{Event, EventImpl}
-import scala.annotation.switch
 
-case class EventHandlerFlumeEvent(event: EventHandler.Event) extends EventImpl {
+case class EventHandlerFlumeEvent(event: EventHandler.Event) extends FlumeEvent {
   import EventHandler._
   import FlumeSinkEventHandlerListener._
   

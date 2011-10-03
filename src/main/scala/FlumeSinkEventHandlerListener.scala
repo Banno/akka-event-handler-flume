@@ -10,7 +10,8 @@ class FlumeSinkEventHandlerListener(sink: EventSink) extends Actor {
   def this(sinkFlumeSpec: String) = this(FlumeSinkEventHandlerListener.sinkFor(sinkFlumeSpec))
   def receive = {
     case e: EventHandler.Event =>
-      sink.append(EventHandlerFlumeEvent(e))
+      val event = EventHandlerFlumeEvent(e)
+      sink.append(event)
   }
 
   override def preStart() {
