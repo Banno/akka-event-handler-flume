@@ -37,7 +37,9 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       new String(event.get("exceptionBacktrace")) must contain("at com.banno.akka.event.flume.FlumeSinkEventHandlerListenerSpec$$anonfun$1$$anonfun$apply$4$$anon$2$delayedInit$body.apply(FlumeSinkEventHandlerListenerSpec.scala:28)")
     }
 
-    case class Cat(name: String)
+    trait Animal { def numberOfLegs: Int }
+    case class Cat(name: String) extends Animal { val numberOfLegs = 4 }
+    
     "register a decorator for a given class" in new sinkSource {
       FlumeEventDecorators.decorate[Cat] { (c: Cat, ev: FlumeEvent) =>
         ev("catName") = c.name
@@ -53,6 +55,22 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       event.getPriority must_== Event.Priority.INFO
       new String(event.get("catName")) must_== "lou"
     }
+
+    "register a decorator for a super class" in new sinkSource {
+      FlumeEventDecorators.decorate[Animal] { (animal: Animal, ev: FlumeEvent) =>
+        ev("numberOfLegs") = animal.numberOfLegs.toString
+      }
+       
+      EventHandler.addListener(listener)
+      EventHandler.info(this, Cat("lou"))
+      
+      val nextEvent = getNextEvent(sink)
+      nextEvent() must eventually (beSome)
+
+      val event = nextEvent().get
+      event.getPriority must_== Event.Priority.INFO
+      new String(event.get("numberOfLegs")) must_== "4"
+    }
   }
 
   trait sinkSource extends Scope with After {
@@ -67,7 +85,10 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       }
     }
 
-    def after = EventHandler.removeListener(listener)
+    def after = {
+      EventHandler.removeListener(listener)
+      FlumeEventDecorators.clear
+    }
   
   }
 }
