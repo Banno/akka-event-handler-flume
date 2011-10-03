@@ -36,6 +36,23 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       new String(event.get("exceptionMessage")) must_== "ouch"
       new String(event.get("exceptionBacktrace")) must contain("at com.banno.akka.event.flume.FlumeSinkEventHandlerListenerSpec$$anonfun$1$$anonfun$apply$4$$anon$2$delayedInit$body.apply(FlumeSinkEventHandlerListenerSpec.scala:28)")
     }
+
+    case class Cat(name: String)
+    "register a decorator for a given class" in new sinkSource {
+      FlumeEventDecorators.decorate[Cat] { (c: Cat, ev: FlumeEvent) =>
+        ev("catName") = c.name
+      }
+       
+      EventHandler.addListener(listener)
+      EventHandler.info(this, Cat("lou"))
+      
+      val nextEvent = getNextEvent(sink)
+      nextEvent() must eventually (beSome)
+
+      val event = nextEvent().get
+      event.getPriority must_== Event.Priority.INFO
+      new String(event.get("catName")) must_== "lou"
+    }
   }
 
   trait sinkSource extends Scope with After {

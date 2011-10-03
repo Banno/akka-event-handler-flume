@@ -9,22 +9,26 @@ case class EventHandlerFlumeEvent(event: EventHandler.Event) extends FlumeEvent 
   
   set("threadName", event.thread.getName)
   
-  event match {
+  val message = event match {
     case Error(cause, instance, message) =>
       setPriority(Event.Priority.ERROR)
       set("sender", instance.getClass.getName)
       set("exceptionType", cause.getClass.getName)
       set("exceptionMessage", cause.getMessage)
       set("exceptionBacktrace", printStackTrace(cause))
+      message
     case Warning(instance, message) =>
       setPriority(Event.Priority.WARN)
       set("sender", instance.getClass.getName)
+      message
     case Info(instance, message) =>
       setPriority(Event.Priority.INFO)
       set("sender", instance.getClass.getName)
+      message
     case Debug(instance, message) =>
       setPriority(Event.Priority.DEBUG)
       set("sender", instance.getClass.getName)
+      message
   }
 
   private def printStackTrace(cause: Throwable): String = {
