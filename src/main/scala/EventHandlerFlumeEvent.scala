@@ -30,6 +30,8 @@ case class EventHandlerFlumeEvent(event: EventHandler.Event) extends FlumeEvent 
       set("sender", instance.getClass.getName)
       message
   }
+  
+  override val getBody = message.toString.getBytes
 
   private def printStackTrace(cause: Throwable): String = {
     val sw = new StringWriter
