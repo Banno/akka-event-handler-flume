@@ -71,6 +71,32 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       event.getPriority must_== Event.Priority.INFO
       new String(event.get("numberOfLegs")) must_== "4"
     }
+
+    "register a multiple decorators for a class" in new sinkSource {
+      FlumeEventDecorators.decorate[Animal] { (_: Animal, ev: FlumeEvent) =>
+        ev("world") = "Earth"
+      }
+      
+      FlumeEventDecorators.decorate[Cat] { (_: Cat, ev: FlumeEvent) =>
+        ev("type") = "Cat"
+      }
+      
+      FlumeEventDecorators.decorate[Cat] { (_: Cat, ev: FlumeEvent) =>
+        ev("sound") = "meow"
+      }
+      
+      EventHandler.addListener(listener)
+      EventHandler.info(this, Cat("lou"))
+      
+      val nextEvent = getNextEvent(sink)
+      nextEvent() must eventually (beSome)
+
+      val event = nextEvent().get
+      event.getPriority must_== Event.Priority.INFO
+      new String(event.get("world")) must_== "Earth"
+      new String(event.get("type")) must_== "Cat"
+      new String(event.get("sound")) must_== "meow"
+    }
   }
 
   trait sinkSource extends Scope with After {
