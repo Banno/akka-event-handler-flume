@@ -43,7 +43,7 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
     case class Cat(name: String) extends Animal { val numberOfLegs = 4 }
     
     "register a decorator for a given class" in new sinkSource {
-      FlumeEventDecorators.decorate[Cat] { (c: Cat, ev: FlumeEvent) =>
+      FlumeEventDecorators.decorate { (c: Cat, ev: FlumeEvent) =>
         ev("catName") = c.name
       }
        
@@ -59,7 +59,7 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
     }
 
     "register a decorator for a super class" in new sinkSource {
-      FlumeEventDecorators.decorate[Animal] { (animal: Animal, ev: FlumeEvent) =>
+      FlumeEventDecorators.decorate { (animal: Animal, ev: FlumeEvent) =>
         ev("numberOfLegs") = animal.numberOfLegs.toString
       }
        
@@ -75,15 +75,15 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
     }
 
     "register a multiple decorators for a class" in new sinkSource {
-      FlumeEventDecorators.decorate[Animal] { (_: Animal, ev: FlumeEvent) =>
+      FlumeEventDecorators.decorate { (_: Animal, ev: FlumeEvent) =>
         ev("world") = "Earth"
       }
       
-      FlumeEventDecorators.decorate[Cat] { (_: Cat, ev: FlumeEvent) =>
+      FlumeEventDecorators.decorate { (_: Cat, ev: FlumeEvent) =>
         ev("type") = "Cat"
       }
       
-      FlumeEventDecorators.decorate[Cat] { (_: Cat, ev: FlumeEvent) =>
+      FlumeEventDecorators.decorate { (_: Cat, ev: FlumeEvent) =>
         ev("sound") = "meow"
       }
       
