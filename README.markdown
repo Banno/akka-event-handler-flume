@@ -49,6 +49,7 @@ These things can be passed in through the constructor argument or the `akka.flum
 One of the greater things about logging to Flume is that you can have semi-structured data instead of just a body text. Some of things you can do with this are: nodes down the line can organize and redirect to a different sink based of an attribute, MapReduce jobs can also take advantage of the structured data instead of tokenizing a string. 
 
 The way to do this is like:
+
 ```scala
 trait Animal
 case class Cat(name: String) extends Animal
@@ -82,7 +83,7 @@ This is licensed under the Apache License Version 2.0
 
 [akka]: http://akka.io
 [flume]: https://cwiki.apache.org/FLUME/
-[akka-sl4jf]: http://akka.io/docs/akka/1.2/general/slf4j.html
+[akka-slf4j]: http://akka.io/docs/akka/1.2/general/slf4j.html
 [event-handler]: http://akka.io/docs/akka/1.2/general/event-handler.html
 [flume sink spec]: http://archive.cloudera.com/cdh/3/flume/UserGuide/index.html#_introducing_sinks
 [T8 Webware]: http://grabgrip.com
