@@ -36,6 +36,9 @@ object FlumeSinkEventHandlerListener {
   def addListenerSink(sinkFlumeSpec: String): Unit = addListenerSink(sinkFor(sinkFlumeSpec))
   def addListenerSink(sink: EventSink): Unit = EventHandler.addListener(listenerFor(sink))
 
+  def addListenerPool(sinkFlumeSpec: String): Unit = addListenerPool(sinkFor(sinkFlumeSpec))
+  def addListenerPool(sink: EventSink): Unit = EventHandler.addListener(Actor.actorOf(new FlumeSinkEventHandlerListenerPool(sink)).start)
+
   private[flume] def sinkFor(sinkFlumeSpec: String) = FlumeBuilder.buildSink(new Context, sinkFlumeSpec)
 
   private[flume] def configuredSink = sinkFor(config.getString("akka.flume-event-handler.sink", "console").replaceAll("\\\\\"", "\""))
