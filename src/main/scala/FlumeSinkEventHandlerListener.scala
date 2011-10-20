@@ -45,6 +45,6 @@ object FlumeSinkEventHandlerListener {
 
   lazy val dispatcher = Dispatchers.newExecutorBasedEventDrivenDispatcher("akka-event-flume-listener").build
 
-  implicit def str2Bytes(str: String): Array[Byte] = str.getBytes
+  implicit def str2Bytes(str: String): Array[Byte] = if (str != null) str.getBytes else new Array(0)
 }
 
