@@ -16,7 +16,31 @@ class FlumeSinkEventHandlerListener(sink: EventSink) extends Actor {
     case e: EventHandler.Event =>
       val event = EventHandlerFlumeEvent(e)
       FlumeEventDecorators.decorateEvent(event.message, event)
-      sink.append(event)
+      tryToWriteToSink(event)
+  }
+
+  private def tryToWriteToSink(event: EventHandlerFlumeEvent): Unit = {
+    try sink.append(event)
+    catch {
+      case t: Throwable =>
+        println("Unable to append to sink: " + sink)
+        println("Trying to reopen sink...")
+        try reOpenSink()
+        catch {
+          case t: Throwable =>
+            println("Unable to reopen sink!")
+            println("Stopping sink.")
+            self.stop
+            return
+        }
+        println("Sink reopened.")
+        sink.append(event)
+    }
+  }
+
+  private def reOpenSink() = {
+    sink.close
+    sink.open
   }
 
   override def preStart() {
