@@ -4,13 +4,13 @@ import akka.config.Config._
 import akka.routing.{DefaultActorPool, SmallestMailboxSelector, BasicNoBackoffFilter, BoundedCapacityStrategy, MailboxPressureCapacitor}
 import com.cloudera.flume.core.EventSink
 
-class FlumeSinkEventHandlerListenerPool(sink: EventSink) extends Actor
+class FlumeSinkEventHandlerListenerPool(sinkFactory: () => EventSink) extends Actor
 with DefaultActorPool
 with BoundedCapacityStrategy
 with SmallestMailboxSelector
 with MailboxPressureCapacitor
 with BasicNoBackoffFilter {
-  def this() = this(FlumeSinkEventHandlerListener.configuredSink)
+  def this() = this(() => FlumeSinkEventHandlerListener.configuredSink)
 
   def receive = _route
   def lowerBound = 1
@@ -19,5 +19,5 @@ with BasicNoBackoffFilter {
   def pressureThreshold = 50
   def partialFill = true
   def selectionCount = 1
-  def instance = Actor.actorOf(new FlumeSinkEventHandlerListener(sink))
+  def instance = Actor.actorOf(new FlumeSinkEventHandlerListener(sinkFactory()))
 }
