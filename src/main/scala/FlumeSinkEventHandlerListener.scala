@@ -17,6 +17,7 @@ class FlumeSinkEventHandlerListener(sink: EventSink) extends Actor {
       val event = EventHandlerFlumeEvent(e)
       FlumeEventDecorators.decorateEvent(event.message, event)
       tryToWriteToSink(event)
+    case genericEvent => // ignore
   }
 
   private def tryToWriteToSink(event: EventHandlerFlumeEvent): Unit = {
