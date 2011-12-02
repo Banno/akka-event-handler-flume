@@ -15,7 +15,8 @@ class FlumeSinkEventHandlerListener(sink: EventSink) extends Actor {
   def receive = {
     case e: EventHandler.Event =>
       val event = EventHandlerFlumeEvent(e)
-      FlumeEventDecorators.decorateEvent(event.message, event)
+      if (event.message != null)
+        FlumeEventDecorators.decorateEvent(event.message, event)
       tryToWriteToSink(event)
     case genericEvent => // ignore
   }

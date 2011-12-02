@@ -8,7 +8,8 @@ object FlumeEventDecorators {
   def decorate[T](f: (T, FlumeEvent) => Unit)(implicit m: Manifest[T]) =
     decorators.put(m.erasure, List(f)) foreach { previous => decorators.put(m.erasure, f +: previous) }
   
-  def decorateEvent(a: Any, ev: FlumeEvent) = decoratorsForClass(a.getClass).foreach(_.apply(a, ev))
+  def decorateEvent(a: Any, ev: FlumeEvent) =
+    decoratorsForClass(a.getClass).foreach(_.apply(a, ev))
 
   def clear {
     decorators.clear
