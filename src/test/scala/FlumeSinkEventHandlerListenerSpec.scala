@@ -1,6 +1,7 @@
 package com.banno.akka.event.flume
 import com.cloudera.flume.core.Event
-import com.cloudera.flume.handlers.debug.MemorySinkSource
+import com.cloudera.flume.handlers.debug.{MemorySinkSource, StubbornAppendSink}
+import com.cloudera.flume.handlers.thrift.ThriftEventSink
 import com.cloudera.flume.reporter.aggregator.CounterSink
 import akka.event.EventHandler
 import org.specs2.mutable.{After, Specification}
@@ -99,6 +100,10 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       new String(event.get("type")) must_== "Cat"
       new String(event.get("sound")) must_== "meow"
     }
+
+    "allow disk failover" in new diskFailoverDecoSink {
+      EventHandler.info(this, "ouch") must not (throwA[Exception])
+    }
   }
 
   trait sinkSource extends Scope with After {
@@ -117,6 +122,9 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       EventHandler.removeListener(listener)
       FlumeEventDecorators.clear
     }
-  
+  }
+
+  trait diskFailoverDecoSink extends sinkSource {
+    override lazy val listener = FlumeSinkEventHandlerListener.listenerFor("diskFailover stubbornAppend rpcSink(\"localhost\", 35869)")
   }
 }

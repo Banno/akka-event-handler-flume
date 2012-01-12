@@ -4,7 +4,7 @@ import akka.config.Config._
 import akka.dispatch.Dispatchers
 import akka.event.EventHandler
 import com.cloudera.flume.core.EventSink
-import com.cloudera.flume.conf.{Context, FlumeBuilder}
+import com.cloudera.flume.conf.{Context, FlumeBuilder, LogicalNodeContext}
 
 class FlumeSinkEventHandlerListener(sink: EventSink) extends Actor {
   def this() = this(FlumeSinkEventHandlerListener.configuredSink)
@@ -66,7 +66,7 @@ object FlumeSinkEventHandlerListener {
     Actor.actorOf(new FlumeSinkEventHandlerListenerPool(() => sinkFor(sinkFlumeSpec))).start
   }
 
-  private[flume] def sinkFor(sinkFlumeSpec: String) = FlumeBuilder.buildSink(new Context, sinkFlumeSpec)
+  private[flume] def sinkFor(sinkFlumeSpec: String) = FlumeBuilder.buildSink(new LogicalNodeContext(Context.EMPTY, "akka-flume-event-handler", "localhost"), sinkFlumeSpec)
 
   private[flume] def configuredSink = sinkFor(config.getString("akka.flume-event-handler.sink", "console").replaceAll("\\\\\"", "\""))
 
