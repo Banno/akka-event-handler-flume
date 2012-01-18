@@ -6,14 +6,14 @@ import akka.event.EventHandler
 import com.cloudera.flume.core.EventSink
 import com.cloudera.flume.conf.{Context, FlumeBuilder, LogicalNodeContext}
 
-class FlumeSinkEventHandlerListener(sink: EventSink) extends Actor {
+class FlumeSinkEventHandlerListener(sink: EventSink, levelThreshold: Int = EventHandler.DebugLevel) extends Actor {
   def this() = this(FlumeSinkEventHandlerListener.configuredSink)
   def this(sinkFlumeSpec: String) = this(FlumeSinkEventHandlerListener.sinkFor(sinkFlumeSpec))
 
   self.dispatcher = FlumeSinkEventHandlerListener.dispatcher
 
   def receive = {
-    case e: EventHandler.Event =>
+    case e: EventHandler.Event if e.level <= levelThreshold =>
       val event = EventHandlerFlumeEvent(e)
       if (event.message != null)
         FlumeEventDecorators.decorateEvent(event.message, event)
@@ -58,9 +58,12 @@ object FlumeSinkEventHandlerListener {
 
   def listenerFor(sinkFlumeSpec: String): ActorRef = listenerFor(sinkFor(sinkFlumeSpec))
   def listenerFor(sink: EventSink): ActorRef = Actor.actorOf(new FlumeSinkEventHandlerListener(sink)).start
+  def listenerFor(sink: EventSink, levelThreshold: Int): ActorRef = Actor.actorOf(new FlumeSinkEventHandlerListener(sink, levelThreshold)).start
 
   def addListenerSink(sinkFlumeSpec: String): Unit = addListenerSink(sinkFor(sinkFlumeSpec))
+  def addListenerSink(sinkFlumeSpec: String, levelThreshold: Int): Unit = addListenerSink(sinkFor(sinkFlumeSpec), levelThreshold)
   def addListenerSink(sink: EventSink): Unit = EventHandler.addListener(listenerFor(sink))
+  def addListenerSink(sink: EventSink, levelThreshold: Int): Unit = EventHandler.addListener(listenerFor(sink, levelThreshold))
 
   def addListenerPool(sinkFlumeSpec: String): Unit = EventHandler.addListener {
     Actor.actorOf(new FlumeSinkEventHandlerListenerPool(() => sinkFor(sinkFlumeSpec))).start
