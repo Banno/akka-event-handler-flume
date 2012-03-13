@@ -1,25 +1,27 @@
 package com.banno.akka.event.flume
+import akka.actor.ActorSystem
+import akka.event.{BusLogging, Logging, LogSource}
+import com.typesafe.config.ConfigFactory
 import com.cloudera.flume.core.Event
 import com.cloudera.flume.handlers.debug.{MemorySinkSource, StubbornAppendSink}
 import com.cloudera.flume.handlers.thrift.ThriftEventSink
 import com.cloudera.flume.reporter.aggregator.CounterSink
-import akka.event.EventHandler
 import org.specs2.mutable.{After, Specification}
 import org.specs2.specification.Scope
 
 object FlumeSinkEventHandlerListenerSpec extends Specification {
   sequential
-  
+
   "Event Handler with a flume sink" should {
     "send events to a sink" in new sinkSource {
-      EventHandler.addListener(listener)
-      EventHandler.info(this, "hello")
-      
+      log.info("hello")
+
       val nextEvent = getNextEvent(sink)
       nextEvent() must eventually (beSome)
-      
+
       val event = nextEvent().get
-      new String(event.get("sender")) must contain("FlumeSinkEventHandlerListenerSpec$")
+      new String(event.get("sender")) must_== sourceName
+      new String(event.get("senderClass")) must contain("FlumeSinkEventHandlerListenerSpec$")
       event.getPriority must_== Event.Priority.INFO
       new String(event.get("threadName")) must not (beEmpty)
       event.getTimestamp must beGreaterThan(0L)
@@ -27,9 +29,8 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
     }
 
     "add stacktraces for error events" in new sinkSource {
-      EventHandler.addListener(listener)
-      EventHandler.error(new RuntimeException("ouch"), this," hello")
-      
+      log.error(new RuntimeException("ouch")," hello")
+
       val nextEvent = getNextEvent(sink)
       nextEvent() must eventually (beSome)
 
@@ -42,15 +43,14 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
 
     trait Animal { def numberOfLegs: Int }
     case class Cat(name: String) extends Animal { val numberOfLegs = 4 }
-    
+
     "register a decorator for a given class" in new sinkSource {
       FlumeEventDecorators.decorate { (c: Cat, ev: FlumeEvent) =>
         ev("catName") = c.name
       }
-       
-      EventHandler.addListener(listener)
-      EventHandler.info(this, Cat("lou"))
-      
+
+      log.bus.publish(Logging.Info("me", classOf[Cat], Cat("lou")))
+
       val nextEvent = getNextEvent(sink)
       nextEvent() must eventually (beSome)
 
@@ -63,10 +63,9 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       FlumeEventDecorators.decorate { (animal: Animal, ev: FlumeEvent) =>
         ev("numberOfLegs") = animal.numberOfLegs.toString
       }
-       
-      EventHandler.addListener(listener)
-      EventHandler.info(this, Cat("lou"))
-      
+
+      log.bus.publish(Logging.Info("me", classOf[Cat], Cat("lou")))
+
       val nextEvent = getNextEvent(sink)
       nextEvent() must eventually (beSome)
 
@@ -79,18 +78,17 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
       FlumeEventDecorators.decorate { (_: Animal, ev: FlumeEvent) =>
         ev("world") = "Earth"
       }
-      
+
       FlumeEventDecorators.decorate { (_: Cat, ev: FlumeEvent) =>
         ev("type") = "Cat"
       }
-      
+
       FlumeEventDecorators.decorate { (_: Cat, ev: FlumeEvent) =>
         ev("sound") = "meow"
       }
-      
-      EventHandler.addListener(listener)
-      EventHandler.info(this, Cat("lou"))
-      
+
+      log.bus.publish(Logging.Info("me", classOf[Cat], Cat("lou")))
+
       val nextEvent = getNextEvent(sink)
       nextEvent() must eventually (beSome)
 
@@ -102,14 +100,30 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
     }
 
     "allow disk failover" in new diskFailoverDecoSink {
-      EventHandler.info(this, "ouch") must not (throwA[Exception])
+      log.info("ouch") must not (throwA[Exception])
     }
   }
 
   trait sinkSource extends Scope with After {
-    lazy val sink = new MemorySinkSource
-    lazy val listener = FlumeSinkEventHandlerListener.listenerFor(sink)
-    
+    self =>
+
+    lazy val sink = FlumeSinkEventHandlerListener.memorySink
+    lazy val sourceName = "sourceName"
+
+    lazy val system = ActorSystem("sys", ConfigFactory.parseString("""
+      akka {
+        event-handlers = ["com.banno.akka.event.flume.FlumeSinkEventHandler"]
+        logLevel = DEBUG
+        flume-event-handler.sink = memory
+      }
+    """))
+
+    val logSource = new LogSource[Any] {
+      def genString(t: Any) = sourceName
+    }
+
+    lazy val log = Logging(system, self)(logSource).asInstanceOf[BusLogging]
+
     def getNextEvent(sink: MemorySinkSource): () => Option[Event] = {
       var nextEvent: Option[Event] = None
       () => nextEvent orElse Option(sink.next) map { ev =>
@@ -119,12 +133,17 @@ object FlumeSinkEventHandlerListenerSpec extends Specification {
     }
 
     def after = {
-      EventHandler.removeListener(listener)
       FlumeEventDecorators.clear
     }
   }
 
   trait diskFailoverDecoSink extends sinkSource {
-    override lazy val listener = FlumeSinkEventHandlerListener.listenerFor("diskFailover stubbornAppend rpcSink(\"localhost\", 35869)")
+    override lazy val system = ActorSystem("sys", ConfigFactory.parseString("""
+      akka {
+        event-handlers = ["com.banno.akka.event.flume.FlumeSinkEventHandler"]
+        logLevel = DEBUG
+        flume-event-handler.sink = "diskFailover stubbornAppend rpcSink(\"localhost\", 35869)"
+      }
+    """))
   }
 }
