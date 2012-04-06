@@ -63,19 +63,29 @@ class FlumeSinkEventHandler extends Actor {
 }
 
 object FlumeSinkEventHandlerListener {
-  private[flume] def configuredSink(system: ActorSystem) = sinkFor(getConfiguredSinkValue(system).getOrElse("console"))
+  private[flume] def configuredSink(system: ActorSystem) = sinkFor(getConfiguredSinkValue(system).getOrElse("console"),
+                                                                   getConfiguredNodeName(system).getOrElse("localhospt"))
 
-  private[flume] def sinkFor(sinkFlumeSpec: String) =
+  private[flume] def sinkFor(sinkFlumeSpec: String, nodeName: String) =
     if (sinkFlumeSpec == "memory") {
       memorySink
     } else {
-      FlumeBuilder.buildSink(new LogicalNodeContext(Context.EMPTY, "akka-flume-event-handler", "localhost"), sinkFlumeSpec)
+      FlumeBuilder.buildSink(new LogicalNodeContext(Context.EMPTY, "akka-flume-event-handler", nodeName), sinkFlumeSpec)
     }
 
   private[flume] def getConfiguredSinkValue(system: ActorSystem): Option[String] = {
     val config = system.settings.config
     if (config.hasPath("akka.flume-event-handler.sink")){
       Some(config.getString("akka.flume-event-handler.sink").replaceAll("\\\\\"", "\""))
+    } else {
+      None
+    }
+  }
+
+  private[flume] def getConfiguredNodeName(system: ActorSystem): Option[String] = {
+    val config = system.settings.config
+    if (config.hasPath("akka.flume-event-handler.node-name")){
+      Some(config.getString("akka.flume-event-handler.node-name"))
     } else {
       None
     }
