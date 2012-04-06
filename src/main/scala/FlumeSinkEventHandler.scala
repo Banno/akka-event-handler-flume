@@ -64,7 +64,7 @@ class FlumeSinkEventHandler extends Actor {
 
 object FlumeSinkEventHandlerListener {
   private[flume] def configuredSink(system: ActorSystem) = sinkFor(getConfiguredSinkValue(system).getOrElse("console"),
-                                                                   getConfiguredNodeName(system).getOrElse("localhospt"))
+                                                                   getConfiguredNodeName(system).getOrElse("localhost"))
 
   private[flume] def sinkFor(sinkFlumeSpec: String, nodeName: String) =
     if (sinkFlumeSpec == "memory") {
