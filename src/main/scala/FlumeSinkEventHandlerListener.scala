@@ -8,7 +8,7 @@ import com.cloudera.flume.conf.{Context, FlumeBuilder, LogicalNodeContext}
 
 class FlumeSinkEventHandlerListener(sink: EventSink, levelThreshold: Int = EventHandler.DebugLevel) extends Actor {
   def this() = this(FlumeSinkEventHandlerListener.configuredSink)
-  def this(sinkFlumeSpec: String) = this(FlumeSinkEventHandlerListener.sinkFor(sinkFlumeSpec))
+  def this(sinkFlumeSpec: String, nodeName: String = "localhost") = this(FlumeSinkEventHandlerListener.sinkFor(sinkFlumeSpec, nodeName))
 
   self.dispatcher = FlumeSinkEventHandlerListener.dispatcher
 
@@ -56,22 +56,23 @@ class FlumeSinkEventHandlerListener(sink: EventSink, levelThreshold: Int = Event
 
 object FlumeSinkEventHandlerListener {
 
-  def listenerFor(sinkFlumeSpec: String): ActorRef = listenerFor(sinkFor(sinkFlumeSpec))
+  def listenerFor(sinkFlumeSpec: String, nodeName: String = "localhost"): ActorRef = listenerFor(sinkFor(sinkFlumeSpec, nodeName))
   def listenerFor(sink: EventSink): ActorRef = Actor.actorOf(new FlumeSinkEventHandlerListener(sink)).start
   def listenerFor(sink: EventSink, levelThreshold: Int): ActorRef = Actor.actorOf(new FlumeSinkEventHandlerListener(sink, levelThreshold)).start
 
-  def addListenerSink(sinkFlumeSpec: String): Unit = addListenerSink(sinkFor(sinkFlumeSpec))
-  def addListenerSink(sinkFlumeSpec: String, levelThreshold: Int): Unit = addListenerSink(sinkFor(sinkFlumeSpec), levelThreshold)
+  def addListenerSink(sinkFlumeSpec: String, nodeName: String): Unit = addListenerSink(sinkFor(sinkFlumeSpec, nodeName))
+  def addListenerSink(sinkFlumeSpec: String, levelThreshold: Int, nodeName: String): Unit = addListenerSink(sinkFor(sinkFlumeSpec, nodeName), levelThreshold)
   def addListenerSink(sink: EventSink): Unit = EventHandler.addListener(listenerFor(sink))
   def addListenerSink(sink: EventSink, levelThreshold: Int): Unit = EventHandler.addListener(listenerFor(sink, levelThreshold))
 
-  def addListenerPool(sinkFlumeSpec: String): Unit = EventHandler.addListener {
-    Actor.actorOf(new FlumeSinkEventHandlerListenerPool(() => sinkFor(sinkFlumeSpec))).start
+  def addListenerPool(sinkFlumeSpec: String, nodeName: String = "localhost"): Unit = EventHandler.addListener {
+    Actor.actorOf(new FlumeSinkEventHandlerListenerPool(() => sinkFor(sinkFlumeSpec, nodeName))).start
   }
 
-  private[flume] def sinkFor(sinkFlumeSpec: String) = FlumeBuilder.buildSink(new LogicalNodeContext(Context.EMPTY, "akka-flume-event-handler", "localhost"), sinkFlumeSpec)
+  private[flume] def sinkFor(sinkFlumeSpec: String, nodeName: String) = FlumeBuilder.buildSink(new LogicalNodeContext(Context.EMPTY, "akka-flume-event-handler", nodeName), sinkFlumeSpec)
 
-  private[flume] def configuredSink = sinkFor(config.getString("akka.flume-event-handler.sink", "console").replaceAll("\\\\\"", "\""))
+  private[flume] def configuredSink = sinkFor(config.getString("akka.flume-event-handler.sink", "console").replaceAll("\\\\\"", "\""),
+                                              config.getString("akka.flume-event-handler.node-name", "localhost"))
 
   lazy val dispatcher = Dispatchers.newExecutorBasedEventDrivenDispatcher("akka-event-flume-listener").build
 
