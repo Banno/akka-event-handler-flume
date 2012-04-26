@@ -14,7 +14,7 @@ resolvers ++= Seq("Typesafe Repository" at "http://repo.typesafe.com/typesafe/re
                   "jboss" at "http://repository.jboss.org/nexus/content/groups/public/")
 
 libraryDependencies ++= Seq("com.cloudera" % "flume-core" % "0.9.4-cdh3u1",
-                            "com.typesafe.akka" % "akka-actor" % "2.0")
+                            "com.typesafe.akka" % "akka-actor" % "2.0.1")
 
 libraryDependencies ++= Seq("org.specs2" %% "specs2" % "1.8.1" % "test")
 
